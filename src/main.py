@@ -1,62 +1,36 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-import time
-import configparser
+# Assuming the necessary modules are in the same directory.
+from agent_manager import AgentManager
+from file_manager import FileManager  # if needed directly in the main
 
-config = configparser.ConfigParser()
-config.read('config.ini')
-EMAIL = config['LOGIN']['email']
-PASSWORD = config['LOGIN']['password']
-
-selectors = configparser.ConfigParser()
-selectors.read('selectors.ini')
+# Initialize the FileManager and AgentManager
+file_manager = FileManager()
+agent_manager = AgentManager(file_manager)
 
 
-def click_element(browser, css_selector, delay=2):
-    browser.find_element(By.CSS_SELECTOR, css_selector).click()
-    time.sleep(delay)
+def main():
+    # Define a main goal
+    main_goal = {
+        "id": "T1000",
+        "description": "Develop a basic e-commerce website"
+    }
 
+    # Save the main goal using AgentManager
+    agent_manager.save_task(main_goal)
 
-def input_text(browser, css_selector, text, delay=2):
-    browser.find_element(By.CSS_SELECTOR, css_selector).send_keys(text)
-    time.sleep(delay)
+    # Use the Decomposer agent to break down the main goal into sub-goals
+    decomposer_agent = agent_manager.generate_agent("Decomposer")
 
+    decomposer_response = decomposer_agent.get_response_from_chatbot(text_prompt=main_goal["description"])
 
-def automate_openai_login():
-    browser = webdriver.Chrome()
-    browser.get('https://chat.openai.com')
-    time.sleep(3)
+    # Assuming the decomposer returns a list of sub-goals, we can save these with a reference back to the main task.
+    sub_goals = decomposer_response['sub_tasks']
 
-    click_element(browser, selectors['LOGIN']['button'])
-    input_text(browser, selectors['EMAIL']['input'], EMAIL)
-    click_element(browser, selectors['EMAIL']['continue_button'])
+    for sub_goal in sub_goals:
+        sub_goal['parent_task_id'] = main_goal['task_id']
+        agent_manager.save_task(sub_goal)
 
-    input_text(browser, selectors['PASSWORD']['input'], PASSWORD)
-    click_element(browser, selectors['PASSWORD']['continue_button'])
-    click_element(browser, selectors['POPUP']['dismiss'])
+    print("Main goal has been decomposed into sub-goals and saved successfully!")
 
-    input_text(browser, selectors['CHAT']['input'], "What cultural meaning does the number 42 have?")
-    browser.find_element(By.CSS_SELECTOR, selectors['CHAT']['input']).send_keys(Keys.RETURN)
-    time.sleep(5)
-
-    try:
-        response_element = browser.find_element(By.CSS_SELECTOR, selectors['CHAT']['response'])
-        response_text = response_element.text
-        print(f"OpenAI's Response: {response_text}")
-    except Exception as e:
-        print(f"Error while fetching response: {e}")
-
-    input_text(browser, selectors['CHAT']['input'], "What cultural meaning does the number 41 have?")
-    browser.find_element(By.CSS_SELECTOR, selectors['CHAT']['input']).send_keys(Keys.RETURN)
-    time.sleep(5)
-
-    try:
-        response_element = browser.find_element(By.CSS_SELECTOR, selectors['CHAT']['response'])
-        response_text = response_element.text
-        print(f"OpenAI's Response: {response_text}")
-    except Exception as e:
-        print(f"Error while fetching response: {e}")
 
 if __name__ == "__main__":
-    automate_openai_login()
+    main()
