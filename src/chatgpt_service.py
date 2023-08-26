@@ -1,12 +1,13 @@
 import time
 import configparser
+import json
+import re
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
 
 
 class OpenAIChatbot:
@@ -125,10 +126,9 @@ class OpenAIChatbot:
             if i != len(lines) - 1:
                 input_element.send_keys(Keys.SHIFT, Keys.RETURN)
 
-            # Wait for the input element's value to be updated with the text we sent
-            WebDriverWait(self.browser, 10).until(
-                lambda driver: input_element.get_attribute('value').endswith(line)
-            )
+            # Using a fixed sleep instead of waiting for the input to update
+            time.sleep(0.2)  # adjust this value based on observed behavior
+
     def _login_to_openai(self):
         self.browser.get('https://chat.openai.com')
         time.sleep(3)
@@ -159,12 +159,48 @@ class OpenAIChatbot:
         WebDriverWait(self.browser, 60).until(EC.presence_of_element_located((By.XPATH, regenerate_xpath)))
 
         try:
-            response_element = self.browser.find_element(By.CSS_SELECTOR, self.selectors['CHAT']['response'])
-            response_text = response_element.text
-            return response_text
+            response_container = self.browser.find_element(By.CSS_SELECTOR, "div.markdown.prose.w-full")
+
+            # Fetch all child elements within the container
+            child_elements = response_container.find_elements(By.XPATH, "./*")
+
+            # Concatenate text from all child elements
+            response_text = ' '.join(elem.text for elem in child_elements)
+
+            json = self._extract_json_from_text(response_text)
+
+            return json
         except Exception as e:
             print(f"Error while fetching response: {e}")
             return None
+
+    def _extract_json_from_text(self, text):
+        # Try to extract object pattern: {...}
+        object_pattern = r'\{.*?\}'
+        object_match = re.search(object_pattern, text, re.DOTALL)
+
+        if object_match:
+            try:
+                # Validate if it's a valid JSON object
+                json.loads(object_match.group(0))
+                return object_match.group(0)
+            except json.JSONDecodeError:
+                pass
+
+        # Try to extract array pattern: [...]
+        array_pattern = r'\[.*?\]'
+        array_match = re.search(array_pattern, text, re.DOTALL)
+
+        if array_match:
+            try:
+                # Validate if it's a valid JSON array
+                json.loads(array_match.group(0))
+                return array_match.group(0)
+            except json.JSONDecodeError:
+                pass
+
+        # If neither patterns are valid JSON
+        return None
 
 
 if __name__ == "__main__":
