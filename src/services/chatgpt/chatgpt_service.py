@@ -1,7 +1,5 @@
 import time
 import configparser
-import json
-import re
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -26,7 +24,7 @@ class OpenAIChatbot:
 
         # Determine which prompt to use next
         try:
-            with open('prompts/last_used.txt', 'r') as f:
+            with open('../../Prompts/last_used.txt', 'r') as f:
                 last_used = f.read().strip()
                 if last_used == 'decomposer.txt':
                     prompt_file = '_decomposer.txt'
@@ -44,7 +42,7 @@ class OpenAIChatbot:
                 formatted_prompt = prompt.replace("[Input main task here]", main_task)
 
                 # Save the used prompt to the last_used.txt file
-                with open('prompts/last_used.txt', 'w') as f:
+                with open('../../Prompts/last_used.txt', 'w') as f:
                     f.write(prompt_file)
 
                 return formatted_prompt
@@ -127,7 +125,7 @@ class OpenAIChatbot:
                 input_element.send_keys(Keys.SHIFT, Keys.RETURN)
 
             # Using a fixed sleep instead of waiting for the input to update
-            time.sleep(0.2)  # adjust this value based on observed behavior
+            time.sleep(0.5)  # adjust this value based on observed behavior
 
     def _login_to_openai(self):
         self.browser.get('https://chat.openai.com')
@@ -159,48 +157,12 @@ class OpenAIChatbot:
         WebDriverWait(self.browser, 60).until(EC.presence_of_element_located((By.XPATH, regenerate_xpath)))
 
         try:
-            response_container = self.browser.find_element(By.CSS_SELECTOR, "div.markdown.prose.w-full")
-
-            # Fetch all child elements within the container
-            child_elements = response_container.find_elements(By.XPATH, "./*")
-
-            # Concatenate text from all child elements
-            response_text = ' '.join(elem.text for elem in child_elements)
-
-            json = self._extract_json_from_text(response_text)
-
-            return json
+            response_element = self.browser.find_element(By.CSS_SELECTOR, self.selectors['CHAT']['response'])
+            response_text = response_element.text
+            return response_text
         except Exception as e:
             print(f"Error while fetching response: {e}")
             return None
-
-    def _extract_json_from_text(self, text):
-        # Try to extract object pattern: {...}
-        object_pattern = r'\{.*?\}'
-        object_match = re.search(object_pattern, text, re.DOTALL)
-
-        if object_match:
-            try:
-                # Validate if it's a valid JSON object
-                json.loads(object_match.group(0))
-                return object_match.group(0)
-            except json.JSONDecodeError:
-                pass
-
-        # Try to extract array pattern: [...]
-        array_pattern = r'\[.*?\]'
-        array_match = re.search(array_pattern, text, re.DOTALL)
-
-        if array_match:
-            try:
-                # Validate if it's a valid JSON array
-                json.loads(array_match.group(0))
-                return array_match.group(0)
-            except json.JSONDecodeError:
-                pass
-
-        # If neither patterns are valid JSON
-        return None
 
 
 if __name__ == "__main__":
