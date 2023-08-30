@@ -8,7 +8,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-
 class OpenAIChatbot:
 
     def __init__(self, config_file='config.ini', selectors_file='selectors.ini'):
@@ -25,7 +24,7 @@ class OpenAIChatbot:
 
         # Determine which prompt to use next
         try:
-            with open('prompts/last_used.txt', 'r') as f:
+            with open('../../Prompts/last_used.txt', 'r') as f:
                 last_used = f.read().strip()
                 if last_used == 'decomposer.txt':
                     prompt_file = '_decomposer.txt'
@@ -43,7 +42,7 @@ class OpenAIChatbot:
                 formatted_prompt = prompt.replace("[Input main task here]", main_task)
 
                 # Save the used prompt to the last_used.txt file
-                with open('prompts/last_used.txt', 'w') as f:
+                with open('../../Prompts/last_used.txt', 'w') as f:
                     f.write(prompt_file)
 
                 return formatted_prompt
@@ -125,10 +124,9 @@ class OpenAIChatbot:
             if i != len(lines) - 1:
                 input_element.send_keys(Keys.SHIFT, Keys.RETURN)
 
-            # Wait for the input element's value to be updated with the text we sent
-            WebDriverWait(self.browser, 10).until(
-                lambda driver: input_element.get_attribute('value').endswith(line)
-            )
+            # Using a fixed sleep instead of waiting for the input to update
+            time.sleep(0.5)  # adjust this value based on observed behavior
+
     def _login_to_openai(self):
         self.browser.get('https://chat.openai.com')
         time.sleep(3)

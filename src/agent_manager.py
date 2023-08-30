@@ -1,6 +1,6 @@
 import os
 import json
-from src.chatgpt_service import OpenAIChatbot
+from src.services.chatgpt.chatgpt_service import OpenAIChatbot
 
 
 class AgentManager:
