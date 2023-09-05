@@ -53,6 +53,8 @@ class AgentManager:
 
     # Prompt Management
     def load_prompt(self, agent_type, context=None):
+        prompt_path = f"Prompts/{agent_type}.txt"
+        print(f"Trying to read file at: {prompt_path}")
         try:
             prompt_content = self.file_manager.read_file(f"Prompts/{agent_type}.txt")
             return prompt_content
@@ -60,8 +62,10 @@ class AgentManager:
             raise ValueError(f"Error loading prompt: {e}")
 
     def save_prompt(self, agent_type, prompt_content):
+        file_path = f"Prompts/{agent_type}.txt"
+        print(f"Attempting to save to {file_path}")
         try:
-            self.file_manager.write_file(f"Prompts/{agent_type}.txt", prompt_content)
+            self.file_manager.write_file(file_path, prompt_content)
         except Exception as e:
             raise ValueError(f"Error saving prompt: {e}")
 
@@ -80,8 +84,3 @@ class AgentManager:
     def list_resolved_tasks(self):
         return self.file_manager.list_directory_contents("Tasks/Resolved")
 
-# Usage:
-# am = AgentManager()
-# agent = am.generate_agent("Resolver")
-# response = am.send_prompt_to_agent(agent, "Hello, how are you?")
-# print(response)

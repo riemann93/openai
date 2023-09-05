@@ -3,19 +3,28 @@ import shutil
 
 
 class FileManager:
+    def __init__(self, base_directory=""):
+        self.base_directory = base_directory
+
+    def _get_full_path(self, filename):
+        return os.path.join(self.base_directory, filename)
 
     def read_file(self, filename):
+        full_path = self._get_full_path(filename)
+        print(f"Attempting to open: {full_path}")
         try:
-            with open(filename, 'r') as file:
+            with open(full_path, 'r') as file:
                 return file.read()
         except FileNotFoundError:
             return "Error: File not found."
 
     def write_file(self, filename, content):
+        full_path = self._get_full_path(filename)
+        print(f"Writing to {full_path}")
         try:
-            with open(filename, 'w') as file:
+            with open(full_path, 'w') as file:
                 file.write(content)
-            return f"Content written to {filename}"
+            return f"Content written to {full_path}"
         except Exception as e:
             return f"Error writing to the file: {e}"
 

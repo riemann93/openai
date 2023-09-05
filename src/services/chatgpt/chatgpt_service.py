@@ -87,19 +87,6 @@ class OpenAIChatbot:
         except Exception as e:
             print(f"Error while trying to click the element: {e}")
 
-    # def _click_element(self, identifier, timeout=10, by_text=False):
-    #
-    #     if by_text:
-    #         xpath = f"//button[contains(., '{identifier}')]"
-    #         element = WebDriverWait(self.browser, timeout).until(
-    #             EC.element_to_be_clickable((By.XPATH, xpath))
-    #         )
-    #     else:
-    #         element = WebDriverWait(self.browser, timeout).until(
-    #             EC.element_to_be_clickable((By.CSS_SELECTOR, identifier))
-    #         )
-    #
-    #     element.click()
 
     def _click_element_by_xpath(self, xpath, timeout=10):
         element = WebDriverWait(self.browser, timeout).until(

@@ -4,7 +4,6 @@ import unittest
 import json
 import tempfile
 
-from services.chatgpt.chatgpt_service import OpenAIChatbot
 from src.file_manager import FileManager
 from src.agent_manager import AgentManager
 from unittest.mock import patch
@@ -14,7 +13,7 @@ class AgentManagerTestCase(unittest.TestCase):
 
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
-        self.fm = FileManager()
+        self.fm = FileManager(base_directory=self.temp_dir)
         self.am = AgentManager(self.fm)
 
         # Setup mock task and prompt directories
@@ -53,18 +52,20 @@ class AgentManagerTestCase(unittest.TestCase):
     def test_save_prompt(self):
         mock_prompt = "Hello, OpenAI!"
         self.am.save_prompt("Resolver", mock_prompt)
+
+        # print out the contents of the directory
+        print(os.listdir(os.path.join(self.temp_dir, "Prompts")))
+
         with open(os.path.join(self.temp_dir, "Prompts", "Resolver.txt"), 'r') as f:
             saved_prompt = f.read()
         self.assertEqual(saved_prompt, mock_prompt)
 
     @patch('src.agent_manager.OpenAIChatbot')
     def test_generate_agent(self, MockOpenAIChatbot):
-        MockOpenAIChatbot.return_value = "FakeAgent"
+        MockOpenAIChatbot.return_value = MockOpenAIChatbot()  # Mock it to return its instance.
 
         agent = self.am.generate_agent("Resolver")
-        self.assertIsInstance(agent, OpenAIChatbot)
-
-    # ... Continue with other methods: list_all_tasks, list_resolved_tasks, etc.
+        self.assertEqual(type(agent), type(MockOpenAIChatbot.return_value))
 
 
 if __name__ == '__main__':
