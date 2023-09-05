@@ -4,10 +4,12 @@ from src.services.chatgpt.chatgpt_service import OpenAIChatbot
 
 
 class AgentManager:
+    PROMPTS_PATH = 'prompts/prompts.json'
 
     def __init__(self, file_manager):
         self.file_manager = file_manager
         self.agents = {}
+        self.prompts = self._load_prompts()
 
     # Task Management
     def _get_task_path(self, task_id, parent_id=None):
@@ -52,11 +54,39 @@ class AgentManager:
             raise ValueError(f"Error marking task as resolved: {e}")
 
     # Prompt Management
+
+    def _load_prompts(self):
+        try:
+            with open(self.PROMPTS_PATH, 'r') as file:
+                return json.load(file)
+        except FileNotFoundError:
+            print(f"Warning: prompts file not found.")
+            return {}
+
+    def get_decomposer_prompt(self, main_task):
+        decomposer_data = self.prompts.get('decomposer')
+        if not decomposer_data:
+            print("Warning: Decomposer prompts missing. Using default prompt.")
+            return main_task
+
+        # Get the current prompt and switch to the next one
+        current_idx = decomposer_data['current']
+        prompt = decomposer_data['prompts'][current_idx].replace("[Input main task here]", main_task)
+        decomposer_data['current'] = (current_idx + 1) % len(decomposer_data['prompts'])
+
+        # Save the updated current index to the prompts file
+        self._save_prompts()
+
+        return prompt
+
+    def _save_prompts(self):
+        with open(self.PROMPTS_PATH, 'w') as file:
+            json.dump(self.prompts, file, indent=4)
+
     def load_prompt(self, agent_type, context=None):
         prompt_path = f"Prompts/{agent_type}.txt"
-        print(f"Trying to read file at: {prompt_path}")
         try:
-            prompt_content = self.file_manager.read_file(f"Prompts/{agent_type}.txt")
+            prompt_content = self.file_manager.read_file(prompt_path)
             return prompt_content
         except Exception as e:
             raise ValueError(f"Error loading prompt: {e}")
