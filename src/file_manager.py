@@ -11,7 +11,6 @@ class FileManager:
 
     def read_file(self, filename):
         full_path = self._get_full_path(filename)
-        print(f"Attempting to open: {full_path}")
         try:
             with open(full_path, 'r') as file:
                 return file.read()
@@ -20,7 +19,6 @@ class FileManager:
 
     def write_file(self, filename, content):
         full_path = self._get_full_path(filename)
-        print(f"Writing to {full_path}")
         try:
             with open(full_path, 'w') as file:
                 file.write(content)
