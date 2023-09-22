@@ -1,52 +1,97 @@
-import numpy as np
+import random
 import time
-import os
+
+# Reseeding the random number generator
+random.seed(time.time())
 
 
-class GameOfLife:
-    def __init__(self, rows, cols):
-        # Initialize the board with random cells
-        self.board = np.random.choice([0, 1], size=(rows, cols), p=[0.5, 0.5])
-        self.rows = rows
-        self.cols = cols
+class Field:
+    def __init__(self, owner):
+        self.owner = owner
+        self.corn_generation = 10
 
-    def display(self):
-        os.system('cls')
-        for row in self.board:
-            print(''.join(['#' if cell else '.' for cell in row]))
+    def generate_corn(self):
+        self.owner.corn += self.corn_generation
 
-    def get_next_generation(self):
-        # Create a copy of the board to hold the next generation
-        new_board = self.board.copy()
+    def cycle(self):
+        self.generate_corn()
 
-        for row in range(self.rows):
-            for col in range(self.cols):
-                # Count living neighbors
-                neighbors = (self.board[(row - 1) % self.rows][(col - 1) % self.cols] +
-                             self.board[(row - 1) % self.rows][col % self.cols] +
-                             self.board[(row - 1) % self.rows][(col + 1) % self.cols] +
-                             self.board[row % self.rows][(col - 1) % self.cols] +
-                             self.board[row % self.rows][(col + 1) % self.cols] +
-                             self.board[(row + 1) % self.rows][(col - 1) % self.cols] +
-                             self.board[(row + 1) % self.rows][col % self.cols] +
-                             self.board[(row + 1) % self.rows][(col + 1) % self.cols])
 
-                # Conway's rules:
-                if self.board[row][col] and (neighbors < 2 or neighbors > 3):
-                    new_board[row][col] = 0
-                elif not self.board[row][col] and neighbors == 3:
-                    new_board[row][col] = 1
+class Agent:
+    MAX_HUNGER = 100
+    CORN_PRICE = 2  # Arbitrary price for corn
 
-        # Set board to the new generation
-        self.board = new_board
+    def __init__(self, cash, corn):
+        self.cash = cash
+        self.corn = corn
+        self.hunger = 0
+        self.fields = []  # List to hold multiple fields
 
-    def run(self, generations):
-        for _ in range(generations):
-            self.display()
-            self.get_next_generation()
-            time.sleep(0.1)
+    def increase_hunger(self):
+        self.hunger += 10
+        if self.hunger >= Agent.MAX_HUNGER:
+            return True
+        return False
+
+    def consume_corn(self, amount):
+        if self.corn >= amount:
+            self.corn -= amount
+            self.hunger -= amount
+            self.hunger = max(0, self.hunger)
+
+    def transact(self, other_agent):
+        if self.hunger > 50 and self.cash >= Agent.CORN_PRICE:
+            if other_agent.corn > 10:
+                self.cash -= Agent.CORN_PRICE
+                other_agent.cash += Agent.CORN_PRICE
+                self.corn += 10
+                other_agent.corn -= 10
+
+    def seek_employment(self, other_agent):
+        if self.cash < 10:
+            self.cash += 10
+            other_agent.cash -= 10
+
+    def cycle(self):
+        is_dead = self.increase_hunger()
+        if is_dead:
+            return True
+
+        self.consume_corn(10)
+        return False
 
 
 if __name__ == "__main__":
-    game = GameOfLife(20, 50)
-    game.run(200)
+    random.seed()  # Reseeding the random generator
+    num_agents = 10
+    agents = [Agent(100, 50) for _ in range(num_agents)]
+    num_fields = 5
+    fields = []
+
+    for _ in range(num_fields):
+        lucky_agent = random.choice(agents)
+        field = Field(lucky_agent)
+        fields.append(field)
+        lucky_agent.fields.append(field)
+
+    months = 50
+    for month in range(months):
+        print(f"Simulating month {month + 1}...")
+        for agent in agents:
+            for field in agent.fields:
+                field.cycle()
+
+            is_dead = agent.cycle()
+            if is_dead:
+                agents.remove(agent)
+                print("Agent has died.")
+                continue  # Skip the below transactions for this dead agent
+
+            # Attempting transactions or employment
+            another_agent = random.choice([a for a in agents if a != agent])
+            agent.transact(another_agent)
+            agent.seek_employment(another_agent)
+
+        print(f"{len(agents)} agents remaining.")
+
+    print("Simulation complete.")
