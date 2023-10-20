@@ -1,7 +1,6 @@
 import random
 import time
 
-# Reseeding the random number generator
 random.seed(time.time())
 
 
@@ -19,13 +18,14 @@ class Field:
 
 class Agent:
     MAX_HUNGER = 100
-    CORN_PRICE = 2  # Arbitrary price for corn
+    CORN_PRICE = 2
 
     def __init__(self, cash, corn):
         self.cash = cash
         self.corn = corn
         self.hunger = 0
-        self.fields = []  # List to hold multiple fields
+        self.fields = []
+        self.workers = []
 
     def increase_hunger(self):
         self.hunger += 10
@@ -48,31 +48,83 @@ class Agent:
                 other_agent.corn -= 10
 
     def seek_employment(self, other_agent):
-        if self.cash < 10:
-            self.cash += 10
-            other_agent.cash -= 10
+        # Placeholder: Should link to actual work
+        if self.cash < 10 and other_agent.cash >= 10:
+            self.workers.append(other_agent)
+            self.cash -= 10
+            other_agent.cash += 10
+
+    def post_job(self, market, salary):
+        market.post_job_offer(self, salary)
+
+    def list_corn(self, market, price, amount):
+        market.list_corn_for_sale(self, price, amount)
+
+    def find_job(self):
+        pass
+    def buy_corn(self):
+        pass
 
     def cycle(self):
         is_dead = self.increase_hunger()
         if is_dead:
             return True
-
-        self.consume_corn(10)
+        if self.hunger > 50:
+            self.consume_corn(10)
         return False
 
 
-if __name__ == "__main__":
-    random.seed()  # Reseeding the random generator
-    num_agents = 10
-    agents = [Agent(100, 50) for _ in range(num_agents)]
-    num_fields = 5
-    fields = []
 
+
+class JobOffer:
+    def __init__(self, employer, salary):
+        self.employer = employer
+        self.salary = salary
+
+
+class CornForSale:
+    def __init__(self, seller, price, amount):
+        self.seller = seller
+        self.price = price
+        self.amount = amount
+
+
+class Market:
+    def __init__(self):
+        self.corn_price = Agent.CORN_PRICE
+        self.current_salary = 10  # Just an initial value
+        self.job_offers = []
+        self.corn_for_sale = []
+
+    def post_job_offer(self, employer, salary):
+        job_offer = JobOffer(employer, salary)
+        self.job_offers.append(job_offer)
+
+    def list_corn_for_sale(self, seller, price, amount):
+        corn_offer = CornForSale(seller, price, amount)
+        self.corn_for_sale.append(corn_offer)
+
+    def update_market(self):
+        # Logic for updating the corn_price and current_salary
+        # Here you can add whatever you want to change these values over time
+        pass
+
+def distribute_fields():
     for _ in range(num_fields):
         lucky_agent = random.choice(agents)
         field = Field(lucky_agent)
         fields.append(field)
         lucky_agent.fields.append(field)
+
+
+if __name__ == "__main__":
+    num_agents = 10
+    agents = [Agent(100, 50) for _ in range(num_agents)]
+    num_fields = 5
+    fields = []
+    market = Market()
+
+    distribute_fields()
 
     months = 50
     for month in range(months):
@@ -85,9 +137,8 @@ if __name__ == "__main__":
             if is_dead:
                 agents.remove(agent)
                 print("Agent has died.")
-                continue  # Skip the below transactions for this dead agent
+                continue
 
-            # Attempting transactions or employment
             another_agent = random.choice([a for a in agents if a != agent])
             agent.transact(another_agent)
             agent.seek_employment(another_agent)
