@@ -5,11 +5,10 @@ import numpy as np
 
 
 class Direction:
-    def __init__(self, direction_coords, coords_to_check, coords_to_color, path_coords):
+    def __init__(self, direction_coords, coords_to_check, coords_to_color):
         self.direction_coords = direction_coords
         self.coords_to_check = coords_to_check
         self.coords_to_color = coords_to_color
-        self.path_coords = path_coords
 
     def validate_direction(self, board):
         rows, cols = board.shape  # Assuming 'board' is a NumPy array
@@ -91,7 +90,8 @@ def investigate_direction(direction, random_point):
     direction_coords = [a + b for a, b in zip(direction, random_point)]
     coords_to_check = [[a + b for a, b in zip(inner_list, random_point)] for inner_list in cells_to_check]
     coords_to_color = [[a + b for a, b in zip(inner_list, random_point)] for inner_list in cells_to_color]
-    return coords_to_check, coords_to_color, direction_coords, path_coords
+
+    return Direction(coords_to_check, coords_to_color, direction_coords), path_coords
 
 
 def get_valid_directions(board, random_point):
@@ -114,8 +114,9 @@ def choose_point(board):
     # change chosen point to value 2
     valid_points = np.argwhere(board == 1)
     random_point = valid_points[random.randint(0, len(valid_points) - 1)]
+    random_point = np.array([24, 7])
     board[random_point[0], random_point[1]] = 2
-    return board, random_point
+    return board, valid_points, random_point
 
 
 def board_setup(width, height):
@@ -136,15 +137,16 @@ def validate_direction(board, coords_to_check):
     for x, y in coords_to_check:
         if x < 0 or y < 0 or x >= rows or y >= cols:
             return False  # Out of bounds
-        if board[x, y] != 0:
+        if board[x, y] not in [0, 3]:
             return False  # Not a 0 in the board
+    return True
 
 def validate_path(path_coords):
     rows, cols = board.shape
     for x, y in path_coords:
         if x < 0 or y < 0 or x >= rows or y >= cols:
             return False  # Out of bounds
-        if board[x, y] != 1:
+        if board[x, y] not in [1, 2]:
             return False  # Not a 1 in the path
     return True  # All checks passed
 
@@ -155,33 +157,35 @@ if __name__ == "__main__":
     plt.ion()
     display_maze(board)
 
-    for i in range(10):
-        board, random_point = choose_point(board)
+    board, valid_points, random_point = choose_point(board)
+    display_maze(board)
+    board, valid_directions = get_valid_directions(board, random_point)
+    display_maze(board)
+    direction_objs = []
+    for direction in valid_directions.copy():
+        direction_obj, path_coords = investigate_direction(direction, random_point)
+        direction_objs.append(direction_obj)
+        fill_board(board, direction_obj.coords_to_check, 3)
         display_maze(board)
-        board, valid_directions = get_valid_directions(board, random_point)
-        display_maze(board)
-        for direction in valid_directions.copy():
-            coords_to_check, coords_to_color, direction_coords, path_coords = investigate_direction(direction, random_point)
-            if not validate_path(path_coords):
-                print("path not valid!")
-                break
-            fill_board(board, coords_to_check, 3)
-            display_maze(board)
-            if not validate_direction(board, coords_to_check):
-                print("direction not valid!")
-                valid_directions.remove(direction)
-                continue
-        print("whattup")
-        if len(valid_directions):
-            random_direction = random.randint(0, len(valid_directions) - 1)
-        else:
+        if not validate_path(path_coords):
+            print("path not valid!")
+            valid_directions = []
+            coords_to_color = []
+            index_to_remove = np.where((valid_points == random_point).all(axis=1))[0][0]
+            valid_points = np.delete(valid_points, index_to_remove, axis=0)
             break
-        fill_board(board, coords_to_color, 1)
-        display_maze(board)
-        board[board != 1] = 0
+        if not validate_direction(board, direction_obj.coords_to_check):
+            print("direction not valid!")
+            valid_directions.remove(direction)
+    print("whattup")
+    if len(valid_directions):
+        random_direction = random.randint(0, len(valid_directions) - 1)
+    fill_board(board, coords_to_color, 1)
+    display_maze(board)
+    board[board != 1] = 0
 
-        # board = extend_maze(board, random_point, valid_directions)
-        # board[board != 1] = 0
-        display_maze(board)
+    # board = extend_maze(board, random_point, valid_directions)
+    # board[board != 1] = 0
+    display_maze(board)
 
     plt.ioff()  # Turn off interactive mode
