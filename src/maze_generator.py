@@ -91,7 +91,7 @@ def investigate_direction(direction, random_point):
     coords_to_check = [[a + b for a, b in zip(inner_list, random_point)] for inner_list in cells_to_check]
     coords_to_color = [[a + b for a, b in zip(inner_list, random_point)] for inner_list in cells_to_color]
 
-    return Direction(coords_to_check, coords_to_color, direction_coords), path_coords
+    return Direction(direction_coords, coords_to_check, coords_to_color), path_coords
 
 
 def get_valid_directions(board, random_point):
@@ -180,12 +180,11 @@ if __name__ == "__main__":
     print("whattup")
     if len(valid_directions):
         random_direction = random.randint(0, len(valid_directions) - 1)
-    fill_board(board, coords_to_color, 1)
-    display_maze(board)
-    board[board != 1] = 0
+        fill_board(board, valid_directions[random_direction].coords_to_color, 1)
 
-    # board = extend_maze(board, random_point, valid_directions)
-    # board[board != 1] = 0
+    display_maze(board)
+    board[board == 2] = 1
+    board[board != 1] = 0
     display_maze(board)
 
     plt.ioff()  # Turn off interactive mode
