@@ -75,7 +75,7 @@ def investigate_direction(direction, random_point):
     cells_to_color = []
     if direction[0] == 0:
         for i in range(-2, 3):
-            path_coords.append([0 if i == 0 else int(i / abs(i)), direction[1] - 1])
+            path_coords.append([0 if i == 0 else int(i / abs(i)), direction[1] - 1]) # this line does not work
             cells_to_check.append([i, direction[1]])
             cells_to_check.append([i, direction[1] * 2])
             cells_to_color.append([0 if i == 0 else int(i / abs(i)), direction[1]])
@@ -114,7 +114,7 @@ def choose_point(board):
     # change chosen point to value 2
     valid_points = np.argwhere(board == 1)
     random_point = valid_points[random.randint(0, len(valid_points) - 1)]
-    random_point = np.array([24, 7])
+    # random_point = np.array([24, 7])
     board[random_point[0], random_point[1]] = 2
     return board, valid_points, random_point
 
@@ -141,7 +141,7 @@ def validate_direction(board, coords_to_check):
             return False  # Not a 0 in the board
     return True
 
-def validate_path(path_coords):
+def validate_path(board, path_coords):
     rows, cols = board.shape
     for x, y in path_coords:
         if x < 0 or y < 0 or x >= rows or y >= cols:
@@ -167,9 +167,9 @@ if __name__ == "__main__":
         direction_objs.append(direction_obj)
         fill_board(board, direction_obj.coords_to_check, 3)
         display_maze(board)
-        if not validate_path(path_coords):
+        if not validate_path(board, path_coords):
             print("path not valid!")
-            valid_directions = []
+            valid_directions.remove(direction)
             coords_to_color = []
             index_to_remove = np.where((valid_points == random_point).all(axis=1))[0][0]
             valid_points = np.delete(valid_points, index_to_remove, axis=0)
